@@ -1,0 +1,17 @@
+\begin{algorithm}
+\caption{State Space Formulation for Attention Channelling Mechanism}
+\begin{algorithmic}[1]
+\Require Input feature map $F \in \mathbb{R}^{H \times W \times C}$
+\Ensure Refined feature map $F_{attn}$
+\Function{AttentionChannelling}{$F$}
+    \State $F_{norm} \gets \text{BatchNorm}(F)$
+    \State $F_{reduced} \gets \text{Conv}_{1\times1}(F_{norm})$
+    \State $M \gets \sigma(\text{Conv}_{3\times3}(F_{reduced}))$
+    \State $F_{attn} \gets F_{norm} \odot M$
+    \For{$i = 1$ to $3$}
+        \State $F_{attn} \gets \text{Conv}_{3\times3}^{stride=2}(F_{attn})$
+    \EndFor
+    \State \Return $F_{attn}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}

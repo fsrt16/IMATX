@@ -1,0 +1,66 @@
+\begin{algorithm}
+\caption{IMATX Network Modules for Cervical Cancer Classification}
+\begin{algorithmic}[1]
+\REQUIRE Input feature map $F \in \mathbb{R}^{H \times W \times C}$
+
+\STATE \textbf{Attention Channeling:}
+\STATE Apply 1×1 convolution to reduce feature dimensions: $F_{\text{reduced}} = \mathrm{Conv}_{1\times1}(F)$
+\STATE Generate attention mask with sigmoid activation:
+\[
+M = \sigma(\mathrm{Conv}_{1\times1}(F_{\text{reduced}}))
+\]
+\STATE Refine feature map: $F_{\text{att}} = F \odot M$
+
+\STATE \textbf{Integrated Multi-context Attention (IMA):}
+\STATE Apply Global Average and Max Pooling:
+\[
+v_{\text{avg}} = \mathrm{GAP}(F_{\text{att}}), \quad v_{\text{max}} = \mathrm{GMP}(F_{\text{att}})
+\]
+\STATE Generate semantic masks:
+\[
+s_{\text{avg}} = \mathrm{Dense}(v_{\text{avg}}), \quad s_{\text{max}} = \mathrm{Dense}(v_{\text{max}})
+\]
+\STATE Combine and apply sigmoid:
+\[
+S = \sigma(s_{\text{avg}} + s_{\text{max}})
+\]
+\STATE Refine features: $F_{\text{sem}} = F_{\text{att}} \odot S$
+\STATE Extract pyramidal features:
+\[
+\begin{aligned}
+P_1 &= \mathrm{Conv}_{1\times1}(F_{\text{sem}}), \\
+P_2 &= \mathrm{Conv}_{3\times3,\ d=2}(F_{\text{sem}}), \\
+P_3 &= \mathrm{Conv}_{5\times5,\ d=3}(F_{\text{sem}})
+\end{aligned}
+\]
+\STATE Concatenate: $F_{\text{pyr}} = \mathrm{Concat}(P_1, P_2, P_3)$
+
+\STATE \textbf{T-Block Module:}
+\FOR{$i=1$ to $3$}
+    \STATE $C_1 = \mathrm{Conv}_{3\times3,\ \text{ReLU}}(F_{\text{pyr}})$
+    \STATE $C_2 = \mathrm{Conv}_{3\times3,\ \text{dilated with rate } d_i,\ \text{ReLU}}(F_{\text{pyr}})$
+    \STATE $C_{\text{cat}} = \mathrm{Concat}(C_1, C_2)$
+    \STATE $F_{\text{tblock}} = \mathrm{ReLU}(\mathrm{BatchNorm}(C_{\text{cat}}))$
+    \STATE $F_{\text{pyr}} \leftarrow F_{\text{tblock}}$
+\ENDFOR
+
+\STATE \textbf{Feature Refinement and Classification:}
+\STATE $F_{\text{final}} = F_{\text{tblock}} \odot M$
+\STATE Global Average Pooling:
+\[
+g_f = \mathrm{GAP}(F_{\text{final}}), \quad g_m = \mathrm{GAP}(M)
+\]
+\STATE Rescale GAP features:
+\[
+g = \frac{g_f}{g_m + \epsilon}
+\]
+
+\STATE Classification head:
+\STATE $d_1 = \mathrm{Dropout}(g, 0.5)$
+\STATE $h = \mathrm{ELU}(\mathrm{Dense}(d_1, 128))$
+\STATE $d_2 = \mathrm{Dropout}(h, 0.25)$
+\STATE $\hat{y} = \mathrm{Softmax}(\mathrm{Dense}(d_2, 5))$
+
+\RETURN Predicted probabilities $\hat{y}$
+\end{algorithmic}
+\end{algorithm}

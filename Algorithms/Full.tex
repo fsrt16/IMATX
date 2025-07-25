@@ -1,0 +1,33 @@
+\begin{algorithm}
+\caption{IMATX via DenseNet169 and IMA block}
+\label{alg:cervical_cancer_detection}
+\begin{algorithmic}[1]
+\REQUIRE $X \in \mathbb{R}^{H_0 \times W_0 \times C_0}$ ($H_0=W_0=256$, $C_0=3$)
+\ENSURE $Y \in \{0,1\}$
+
+\STATE $\tilde{X} = \mathrm{Normalize}(X)$
+\STATE $X' = \mathrm{Resize}(\tilde{X}, 256, 256, 3)$
+\STATE $F_0 = \mathcal{F}_{\text{DenseNet169}}(X')$
+\STATE $F_1 = \mathrm{BatchNorm}_{1 \times 1}(F_0)$
+
+\FOR{$i \in \{64,128,256\}$}
+  \STATE $F_{\text{T}_i} = \mathrm{TBlock}_i(F_1)$
+\ENDFOR
+
+\STATE $F_{\text{gap}} = \mathrm{GlobalAvgPool}(F_{\text{T}_{256}})$
+\STATE $F_{\text{gmp}} = \mathrm{GlobalMaxPool}(F_{\text{T}_{256}})$
+\STATE $F_{\text{concat}} = [F_{\text{gap}}; F_{\text{gmp}}]$
+\STATE $A = \sigma(\mathrm{Conv}_{1 \times 1}^3(F_{\text{concat}}))$
+\STATE $F_{\text{att}} = A \odot F_{\text{T}_{256}}$
+\STATE $F_{\text{enh}} = F_{\text{att}} \odot F_{\text{T}_{256}}$
+
+\STATE $z = \mathrm{Flatten}(F_{\text{enh}})$
+\STATE $z_1 = \mathrm{Dense}(z, 64)$
+\STATE $z_2 = \mathrm{Dense}(z_1, 128)$
+\STATE $z_3 = \mathrm{Dense}(z_2, 512)$
+\STATE $\hat{y} = \mathrm{SoftMax}(z_3)$
+\STATE $Y = \arg\max_i \hat{y}_i$
+
+\RETURN $Y$
+\end{algorithmic}
+\end{algorithm}

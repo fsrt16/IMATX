@@ -1,0 +1,17 @@
+\begin{algorithm}
+\caption{T-block Module}
+\KwIn{Input feature map $F_{in} \in \mathbb{R}^{H \times W \times C}$}
+\KwOut{Enhanced feature map $F_{T}$}
+
+\textbf{Step 1: Local Feature Extraction} \\
+$F_{local} = \text{ReLU}(\text{Conv}_{3\times3}(F_{in}))$
+
+\textbf{Step 2: Global Context Capture via Dilation} \\
+$F_{dilated} = \text{ReLU}(\text{Conv}_{3\times3}^{d}(F_{in}))$
+
+\textbf{Step 3: Concatenate and Normalize} \\
+$F_{concat} = \text{Concat}(F_{local}, F_{dilated})$ \\
+$F_T = \text{ReLU}(\text{BatchNorm}(F_{concat}))$
+
+\Return{$F_T$}
+\end{algorithm}

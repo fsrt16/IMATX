@@ -1,0 +1,31 @@
+\begin{algorithm}
+\caption{Integrated Multi-context Attention (IMA) Module}
+\KwIn{Feature map $F \in \mathbb{R}^{H \times W \times C}$}
+\KwOut{Enhanced feature map $F_{IMA}$}
+
+\textbf{Step 1: Multi-scale Context Aggregation} \\
+\begin{align*}
+F_1 &= \text{Conv}_{1\times1}(F) \\
+F_2 &= \text{Conv}_{3\times3}^{d=2}(F) \\
+F_3 &= \text{Conv}_{5\times5}^{d=3}(F)
+\end{align*}
+$F_{fused} = F_1 + F_2 + F_3$
+
+\textbf{Step 2: Semantic Attention Computation} \\
+\begin{align*}
+GAP &= \text{GlobalAvgPool}(F_{fused}) \\
+GMP &= \text{GlobalMaxPool}(F_{fused}) \\
+F_{pool} &= [GAP; GMP]
+\end{align*}
+
+\begin{align*}
+A &= \sigma(\text{Dense}(\text{ReLU}(\text{Dense}(F_{pool}))))
+\end{align*}
+
+\textbf{Step 3: Attention Application} \\
+\begin{align*}
+F_{IMA} = F_{fused} \odot A
+\end{align*}
+
+\Return{$F_{IMA}$}
+\end{algorithm}
